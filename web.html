@@ -1,0 +1,403 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="index.css" rel="stylesheet" type="text/css">
+  <link rel="icon" type="image/ico" href="icono.ico" sizes="64x64">
+	<title>Prácticas 4 -5</title>
+</head>
+<body>
+	
+   
+    <div class="division">
+      <div class="interfaz">
+        <form action="formulario" method="post" >
+          <div class="form">
+        <fieldset style="width:200px; background-color: cadetblue; padding-right:20px; padding-left:50px;">
+        <legend>Nombre de los jugadores</legend>
+      <ul>
+        <li style="list-style: none;">
+          <label for="name">Nombre jugador 1:</label>
+          <input type="text" id="name1" name="user_name"/>
+        </li>
+        <li style="list-style: none;">
+          <label for="name">Color jugador 1:</label> <input id="color1" type="color" name="color" />
+      </li>
+      <li style="list-style: none;">
+          <label for="mail">Nombre jugador 2:</label>
+          <input type="email" id="name2" name="user_name"/>
+        </li>
+        <li style="list-style: none;">
+          <label for="name">Color jugador 2 :</label><input id="color2" type="color" name="color"/>
+        </li>
+      </ul>
+      </fieldset>
+    
+      </div>
+     </form>
+     
+      <div class="volumen"><p>Volumen</p><input type="range" id="ganancia" title="volume" min="0" max="1" step="0.1" value="1"></div>
+     <div class="botonincio"><input type="submit" value="Iniciar partida" class="b-button" onclick="iniciojuego(); " ></div>
+    </div>
+    </div>
+    <canvas id="canvass", class="division", width="800", height="400" style="border: 5px solid black;" ></canvas>
+		<audio id="audio" src="audiop.mp3" crossorigin="anonymous"></audio>
+  
+    <script type="text/javascript">
+        /*canva y dibujado  */
+        var c = document.getElementById("canvass");
+		    var ctx = c.getContext("2d");
+        
+        var keys = [];
+        var balas = [];
+        var ptos1=0;
+        var ptos2=0;
+        detenerjuego();
+
+        var velocidadInicial = 5;
+
+        var deltaX = 200;
+        var deltaY = 200;
+        var deltaX1 = 590;
+        var deltaY1 = 200;
+     /* var x=200;
+      var y=200;
+      var x1=590;
+      var y1=200;*/
+
+          var radio=20;
+          var nombre1;
+          var nombre2;
+         
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const pannerOptions = { pan: 0};
+
+        var gainInput = document.getElementById("ganancia");
+        var stereoInput = document.getElementById("estereo");
+        var gainNode;
+        var audioCtx;
+
+        
+      
+          function iniciojuego(){
+           
+           
+                
+          nombre1 = document.getElementById('name1').value; 
+          nombre2 = document.getElementById('name2').value;
+            // nombres formulario
+            
+            ctx.fillStyle = "#3e3e3e";
+            ctx.font = "16px Arial";
+            ctx.fillText(nombre1 + ": " + ptos1, 30, 30);           //escrbir en canvas puntuacion y nombres
+            ctx.fillText(nombre2 + ": " + ptos2, c.width / 1.8, 30);
+
+          
+
+            document.addEventListener("keydown", keysPressed, false);
+            document.addEventListener("keyup", keysReleased, false);
+            document.addEventListener('click', Lanzarbalas);
+            
+               
+        
+            function keysPressed(e) {
+           
+      
+        
+           
+            keys[e.keyCode] = true;
+        
+           
+        if  (keys[65]) {            //A izquierda
+            deltaX -= 5;
+        }
+            if (keys[68]) {     //D derecha
+            deltaX += 5;
+            }
+            if (keys[83]) {     //W arriba
+            deltaY += 5;
+        }
+        if (keys[87]) {     //S abajo
+            deltaY -= 5;
+        }
+        if (keys[37]) {     //flecha izquierda
+            deltaX1 -= 5;
+        }
+        
+        if (keys[39]) {
+            deltaX1 += 5; //flecha derecha
+        }
+       
+        if (keys[38]) {         //flecha abajo
+            deltaY1 -= 5;
+        }
+        
+        if (keys[40]) {     //flecha arriba
+            deltaY1 += 5;
+        }
+        e.preventDefault();
+        }
+      
+          
+         function keysReleased(e) {
+           
+            keys[e.keyCode] = false;
+            }
+
+
+            dibujacirculo(deltaX,deltaY,deltaX1,deltaY1);
+            mov();
+            dibujabalas();
+            reiniciarJuego();
+          
+        //posiciones iniclaes bolas derecha (x1,y1) e izuqierda(x,y)
+    
+          }
+
+
+          function dibujacirculo(x, y, x1,y1) {      
+            
+
+          //dibujado de los circulos con color selccioando
+            ctx.fillStyle = document.getElementById("color1").value; //circulo izquierda
+            ctx.beginPath();
+            ctx.arc(x, y, 20, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.closePath(); 
+
+            ctx.fillStyle = document.getElementById("color2").value;    //circulo derecha
+            ctx.beginPath();
+            ctx.arc(x1, y1, 20, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.closePath(); 
+
+            //dibujar línea divisora
+          ctx.setLineDash([10, 5]); 
+          ctx.lineWidth = 1.2; 
+          var s = c.width/2;
+          var pp = c.height;
+          var xx = s;
+          var yy = 0;
+          
+          ctx.beginPath();
+          ctx.moveTo(s, pp);
+          ctx.lineTo(xx, yy);
+          ctx.stroke();
+          ctx.closePath();
+
+             }
+            
+            //mueve circulos , jugadores
+            function mov() {
+               
+            ctx.clearRect(0, 0, c.width, c.height);
+            detenerjuego();
+           
+              // bola izuqierda limite horizontal
+                   if (deltaX < radio) {
+                        deltaX = radio;
+                    } else if (deltaX > c.width/2 - radio) {
+                        deltaX = c.width/2 - radio;
+                    }
+
+                    // bola derecha limite horizontal
+                    if (deltaX1 < c.width/2 + radio) {
+                        deltaX1 = c.width/2 + radio;
+                    } else if (deltaX1 > c.width - radio) {
+                        deltaX1 = c.width - radio;
+                    }
+                        // bola izuqierda limite arriba y abajo
+                  if (deltaY < radio) {
+                      deltaY = radio;
+                    } else if (deltaY > c.height - radio) {
+                      deltaY = c.height - radio;
+                    }
+
+                    //  bola derecha limite arriba y abajo
+                    if (deltaY1 < radio) {
+                      deltaY1 = radio;
+                    } else if (deltaY1 > c.height - radio) {
+                      deltaY1 = c.height - radio
+                    }
+
+
+              dibujacirculo(deltaX, deltaY, deltaX1, deltaY1);
+              requestAnimationFrame(mov);
+            }
+           // mov();
+            
+        
+    //al hacer click lanzar balas 
+    //document.addEventListener('click', Lanzarbalas);
+   function Lanzarbalas()
+   {
+      if (event.button === 0 ) { // si se hace click con el botón izquierdo
+
+        //coger click del usaurio , posición
+        var mouseX = event.clientX - c.offsetLeft;
+        var mouseY = event.clientY - c.offsetTop;
+
+        if ( mouseX >= 0 && mouseX <= c.width/2 && mouseY >= 0 && mouseY <= c.height) 
+        { // lado izquierdo del canvas
+          var balaX = deltaX + radio;
+          var balaY = deltaY + radio;
+          crearBala(balaX, balaY, 'left');
+          //audio bala
+          if(!audioCtx) 
+                init();
+
+            if(audioCtx.state === 'suspended')
+                audioCtx.resume();
+
+            panner.pan.value = -1;
+
+        }
+        if (mouseX >= c.width/2  && mouseX <= c.width && mouseY >= 0 && mouseY <= c.height) 
+        {  // lado derecho del canvas
+          var balaX = deltaX1;
+          var balaY = deltaY1 + radio;
+          crearBala(balaX, balaY, 'right');
+          //audio bala
+          if(!audioCtx) 
+                init();
+
+            if(audioCtx.state === 'suspended')
+                audioCtx.resume();
+
+            panner.pan.value = 1;
+        }
+      }
+    }
+
+function dibujabalas() 
+{
+  ctx.clearRect(0, 0, c.width, c.height); //donde se dibujaran
+  dibujacirculo(deltaX, deltaY,deltaX1,deltaY1 );
+  
+  for (let i = 0; i < balas.length; i++) {
+    ctx.fillRect(balas[i].x, balas[i].y, 10, 5);
+    //ctx.fillStyle = 'blue';
+
+    if (balas[i].d === 'left') {
+      balas[i].x += balas[i].velocidad;
+      
+    } else {
+      balas[i].x -= balas[i].velocidad;
+      
+    }
+  }
+  
+  detectarColisiones(); // Detectar colisiones y sumar puntos
+  ctx.fillText(nombre1 + ": " + ptos1, 30, 30); // Actualizar puntuación
+  ctx.fillText(nombre2 + ": " + ptos2, c.width / 1.8, 30);
+  requestAnimationFrame(dibujabalas);
+}
+
+function dist(x1, y1, x2, y2) {
+  return Math.sqrt((x2 - x1)**2 + (y2 - y1)**2);
+}
+
+function crearBala(x, y, d) {
+  let bala = {x: x,   y: y,  d: d,  velocidad: velocidadInicial};
+  balas.push(bala);
+}
+
+//dibujabalas();
+
+function detectarColisiones() {
+for (var i = 0; i < balas.length; i++) {
+    var bala = balas[i];
+    var radioB = 5;
+    
+    // Si la bala está en el lado izquierdo del canvas
+    if (bala.d === 'left') {
+      var D = dist(bala.x, bala.y, deltaX1, deltaY1);
+      if (D <= radioB + 20) { // Si hay colisión
+        ptos1 += 1;
+        balas.splice(i, 1); // Eliminar la bala
+        break;
+      }
+    }
+    
+    // Si la bala está en el lado derecho del canvas
+    if (bala.d === 'right') {
+      var D = dist(bala.x, bala.y, deltaX, deltaY);
+      if (D <= radioB + 20) { // Si hay colisión
+        ptos2 += 1;
+        balas.splice(i, 1); // Eliminar la bala
+        break;
+      }
+    }
+  }
+          }
+
+
+
+//función juego se detiene si alguno de los jugadores llega a 20 ptoss
+function detenerjuego(){
+
+  if (ptos1==20 || ptos2==20){
+   alert("Juego finalizado");
+    reiniciarJuego(); //se vuelve a iniciar partida
+  }
+}
+
+function reiniciarJuego() {
+  // Reiniciar puntos
+  ptos1 = 0;
+  ptos2 = 0;
+  
+  // Reiniciar posiciones de las bolas
+  deltaX = 200;
+  deltaY = 200;
+  deltaX1 = 590;
+  deltaY1 = 200;
+ 
+}
+      /*AUDIO*/
+
+       
+      function init()
+        {
+            audioCtx = new AudioContext();
+            gainNode = audioCtx.createGain();
+            panner = new StereoPannerNode(audioCtx, pannerOptions);
+            audioElement = document.getElementById("audio");
+            track = audioCtx.createMediaElementSource(audioElement);
+            track.connect(gainNode).connect(panner).connect(audioCtx.destination);
+        }
+
+          
+        function play()
+        {
+            if(!audioCtx) 
+            init();
+
+            if(audioCtx.state === 'suspended')
+            audioCtx.resume();
+
+            audioElement.play();
+
+        }
+        
+        function ganancia()
+        {
+            if(!audioCtx) 
+            init();
+
+            if(audioCtx.state === 'suspended')
+            audioCtx.resume();
+
+            gainNode.gain.value = gainInput.value;
+        }
+
+    
+
+        c.addEventListener('click', play);
+        gainInput.addEventListener('input', ganancia);
+       
+</script>
+</body>
+</html>
